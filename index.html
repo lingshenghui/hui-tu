@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Cube Animation</title>
+    <style>
+        
+        /* 添加全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* 改为min-height确保内容不会溢出 */
+            margin: 0;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            overflow: hidden; /* 防止页面滚动 */
+        }
+
+        /* 使用CSS变量定义响应式尺寸 */
+        :root {
+            --cube-size: min(300px, 80vmin);
+            --cube-padding: min(20px, 5vmin);
+        }
+        .scene {
+            width: var(--cube-size);
+            height: var(--cube-size);
+            perspective: calc(var(--cube-size) * 3.33);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: min(20px, 5vmin);
+            padding: var(--cube-padding);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(0deg) rotateY(0deg);
+            animation: rotateCube 5s infinite linear;
+        }
+
+        .cube__face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .cube__face img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            animation: imageEffect 5s infinite linear;
+            transform-origin: center center;
+        }
+
+        .cube__face--front img { animation-delay: 0s; }
+        .cube__face--back img { animation-delay: -1s; }
+        .cube__face--right img { animation-delay: -2s; }
+        .cube__face--left img { animation-delay: -3s; }
+        .cube__face--top img { animation-delay: -4s; }
+        .cube__face--bottom img { animation-delay: -5s; }
+
+        @keyframes imageEffect {
+            0% {
+                transform: scale(1);
+                filter: brightness(1) contrast(1);
+            }
+            25% {
+                transform: scale(1.1);
+                filter: brightness(1.1) contrast(1.1);
+            }
+            50% {
+                transform: scale(1);
+                filter: brightness(1) contrast(1);
+            }
+            75% {
+                transform: scale(1.1);
+                filter: brightness(1.1) contrast(1.1);
+            }
+            100% {
+                transform: scale(1);
+                filter: brightness(1) contrast(1);
+            }
+        }
+
+        .cube__face:hover img {
+            animation-play-state: paused;
+            transform: scale(1.2);
+            transition: transform 0.3s ease;
+        }
+
+        .cube__face::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                rgba(255,255,255,0.2) 0%,
+                rgba(255,255,255,0) 50%,
+                rgba(255,255,255,0.2) 100%);
+            pointer-events: none;
+            animation: borderGlow 3s infinite linear;
+        }
+
+        @keyframes borderGlow {
+            0% {
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* 更新立方体面的变换，使用相对单位 */
+        .cube__face--front  { transform: translateZ(calc(var(--cube-size) / 2)); }
+        .cube__face--back   { transform: rotateY(180deg) translateZ(calc(var(--cube-size) / 2)); }
+        .cube__face--right  { transform: rotateY(90deg) translateZ(calc(var(--cube-size) / 2)); }
+        .cube__face--left   { transform: rotateY(-90deg) translateZ(calc(var(--cube-size) / 2)); }
+        .cube__face--top    { transform: rotateX(90deg) translateZ(calc(var(--cube-size) / 2)); }
+        .cube__face--bottom { transform: rotateX(-90deg) translateZ(calc(var(--cube-size) / 2)); }
+
+        @keyframes rotateCube {
+            0% { transform: rotateX(0deg) rotateY(0deg); }
+            100% { transform: rotateX(360deg) rotateY(720deg); }
+        }
+
+        .scene:hover .cube {
+            animation-play-state: paused;
+        }
+
+        /* 音乐控制按钮响应式样式 */
+        .music-controls {
+            position: fixed;
+            bottom: min(20px, 5vmin);
+            right: min(20px, 5vmin);
+            z-index: 1000;
+            display: flex;
+            gap: min(10px, 2vmin);
+            flex-wrap: wrap; /* 在小屏幕上允许换行 */
+            justify-content: flex-end;
+        }
+
+        .music-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: min(10px, 2.5vmin) min(20px, 5vmin);
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            font-size: min(16px, 4vmin);
+            white-space: nowrap;
+        }
+
+        #volumeControl {
+            width: min(100px, 25vmin);
+            margin: 0 min(10px, 2.5vmin);
+            vertical-align: middle;
+        }
+
+        /* 媒体查询，处理特别小的屏幕 */
+        @media (max-width: 360px) {
+            .music-controls {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scene">
+        <div class="cube">
+            <div class="cube__face cube__face--front">
+                <img src="img/1.jpg" alt="Front">
+            </div>
+            <div class="cube__face cube__face--back">
+                <img src="img/2.jpg" alt="Back">
+            </div>
+            <div class="cube__face cube__face--right">
+                <img src="img/3.jpg" alt="Right">
+            </div>
+            <div class="cube__face cube__face--left">
+                <img src="img/4.jpg" alt="Left">
+            </div>
+            <div class="cube__face cube__face--top">
+                <img src="img/5.jpg" alt="Top">
+            </div>
+            <div class="cube__face cube__face--bottom">
+                <img src="img/6.jpg" alt="Bottom">
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加音频元素 -->
+    <audio id="bgMusic" loop>
+        <source src="music/background.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <!-- 添加音乐控制按钮 -->
+    <div class="music-controls">
+        <button class="music-btn" onclick="toggleMusic()">暂停/播放</button>
+        <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="0.5">
+    </div>
+
+    <script>
+        const audio = document.getElementById('bgMusic');
+        const volumeControl = document.getElementById('volumeControl');
+
+        // 设置初始音量
+        audio.volume = 0.5;
+
+        // 方案1：监听任意点击事件来播放
+        document.addEventListener('click', function initAudio() {
+            audio.play();
+            // 移除监听器，这样只会在第一次点击时触发
+            document.removeEventListener('click', initAudio);
+        }, { once: true });
+
+        // 方案2：添加键盘事件监听
+        document.addEventListener('keydown', function initAudio() {
+            audio.play();
+            document.removeEventListener('keydown', initAudio);
+        }, { once: true });
+
+        // 监听页面可见性变化
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                audio.pause();
+            } else {
+                audio.play();
+            }
+        });
+
+        // 音乐播放/暂停切换
+        function toggleMusic() {
+            if (audio.paused) {
+                audio.play();
+            } else {
+                audio.pause();
+            }
+        }
+
+        // 音量控制
+        volumeControl.addEventListener('input', function() {
+            audio.volume = this.value;
+        });
+
+        // 添加页面加载完成后的处理
+        window.onload = function() {
+            // 尝试自动播放
+            let playPromise = audio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    // 如果自动播放失败，添加一个提示
+                    console.log("请点击页面任意位置开始播放音乐");
+                    // 可以在这里添加一个视觉提示
+                    showPlayHint();
+                });
+            }
+        }
+
+        // 添加视觉提示函数
+        function showPlayHint() {
+            const hint = document.createElement('div');
+            hint.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.7);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                cursor: pointer;
+                z-index: 1001;
+            `;
+            hint.innerHTML = '点击任意位置播放音乐';
+            
+            hint.onclick = function() {
+                audio.play();
+                hint.remove();
+            };
+            
+            document.body.appendChild(hint);
+            
+            // 5秒后自动移除提示
+            setTimeout(() => hint.remove(), 5000);
+        }
+    </script>
+</body>
+</html> 
